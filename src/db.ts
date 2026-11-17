@@ -1,6 +1,14 @@
-import { DatabaseSync } from "node:sqlite";
+import { createRequire } from "node:module";
+import type { DatabaseSync as DatabaseSyncType } from "node:sqlite";
 
-export function createDatabase(dbPath: string = ":memory:"): DatabaseSync {
+const require = createRequire(import.meta.url);
+const { DatabaseSync } = require("node:sqlite") as {
+  DatabaseSync: typeof DatabaseSyncType;
+};
+
+export type { DatabaseSyncType as DatabaseSync };
+
+export function createDatabase(dbPath: string = ":memory:"): DatabaseSyncType {
   const db = new DatabaseSync(dbPath);
   db.exec("PRAGMA foreign_keys = ON;");
 
