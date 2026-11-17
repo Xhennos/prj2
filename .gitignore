@@ -1,0 +1,19 @@
+# Credenciales y scripts locales de identidad
+github_keys.json
+.git-identities.sh
+.git-identities.ps1
+setup_prj2.py
+*.key
+*.pem
+.env
+.env.*
+
+# Dependencias y compilación Node/TS
+node_modules/
+dist/
+coverage/
+
+# Bases de datos SQLite locales
+*.db
+*.sqlite
+*.sqlite3
