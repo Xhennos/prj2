@@ -61,18 +61,36 @@ export interface SpaceAvailability {
   bookedSlots: AvailabilitySlot[];
 }
 
+export interface MaintenanceBlock {
+  id: string;
+  spaceId: string;
+  startTime: string;
+  endTime: string;
+  reason: string;
+  createdAt: string;
+}
+
+export interface CreateMaintenanceBlockInput {
+  spaceId: string;
+  startTime: string;
+  endTime: string;
+  reason: string;
+}
+
 export type DomainErrorCode =
   | "VALIDATION_ERROR"
   | "SPACE_NOT_FOUND"
   | "RESERVATION_NOT_FOUND"
   | "SPACE_ALREADY_EXISTS"
   | "DOUBLE_BOOKING_CONFLICT"
+  | "SPACE_UNDER_MAINTENANCE"
   | "PAST_RESERVATION_NOT_ALLOWED"
   | "OUTSIDE_OPERATING_HOURS"
   | "INVALID_DURATION"
   | "CAPACITY_EXCEEDED"
   | "SPACE_INACTIVE"
-  | "RESERVATION_ALREADY_CANCELLED";
+  | "RESERVATION_ALREADY_CANCELLED"
+  | "CANCELLATION_WINDOW_EXPIRED";
 
 export class DomainError extends Error {
   public readonly code: DomainErrorCode;

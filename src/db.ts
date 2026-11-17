@@ -38,6 +38,18 @@ export function createDatabase(dbPath: string = ":memory:"): DatabaseSyncType {
 
     CREATE INDEX IF NOT EXISTS idx_reservations_overlap
       ON reservations (space_id, status, start_time, end_time);
+
+    CREATE TABLE IF NOT EXISTS maintenance_blocks (
+      id TEXT PRIMARY KEY,
+      space_id TEXT NOT NULL REFERENCES spaces(id) ON DELETE CASCADE,
+      start_time TEXT NOT NULL,
+      end_time TEXT NOT NULL,
+      reason TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_maintenance_space_time
+      ON maintenance_blocks (space_id, start_time, end_time);
   `);
 
   return db;
