@@ -49,6 +49,18 @@ export interface ReservationFilter {
   date?: string;
 }
 
+export interface AvailabilitySlot {
+  reservationId: string;
+  startTime: string;
+  endTime: string;
+}
+
+export interface SpaceAvailability {
+  spaceId: string;
+  date: string;
+  bookedSlots: AvailabilitySlot[];
+}
+
 export type DomainErrorCode =
   | "VALIDATION_ERROR"
   | "SPACE_NOT_FOUND"
