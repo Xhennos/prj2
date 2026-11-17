@@ -31,3 +31,13 @@
 - **Contexto:** La metodología del proyecto exige trazabilidad real de commits, Issues, PRs y revisiones cruzadas entre los 3 integrantes (**Estiven**, **Einar** y **Ahmed**).
 - **Decisión:** Toda tarea se vincula a un Issue en GitHub, se desarrolla en una rama dedicada y requiere aprobación (`gh pr review --approve`) y merge por un integrante distinto al autor de la rama.
 - **Consecuencias:** Historial auditable con contribuciones diferenciadas por ciclo y protección contra auto-aprobaciones sin revisión.
+
+---
+
+## ADR-005: Carga de `node:sqlite` vía `createRequire` y gestión de CR-01 en tabla dedicada
+- **Estado:** Aceptado (Ciclos 1 y 3)
+- **Contexto:** Vite 5 (usado internamente por Vitest 2.1) intenta resolver imports ESM estáticos `node:sqlite` eliminando el prefijo `node:`. Adicionalmente, el Change Request `CR-01` requirió introducir bloqueos administrativos de mantenimiento sin contaminar la semántica de reservas de usuarios.
+- **Decisión:**
+  1. Cargar `node:sqlite` en `src/db.ts` mediante `createRequire(import.meta.url)` preservando el tipado TypeScript estricto (`import type { DatabaseSync }`).
+  2. Modelar los bloqueos de mantenimiento en una tabla separada `maintenance_blocks` validada dentro de la misma transacción `BEGIN IMMEDIATE` que crea reservas (`RB-08`), junto a la validación de ventana mínima de 120 minutos en cancelaciones (`RB-07`).
+- **Consecuencias:** Cero conflictos con el runner de Vitest, separación limpia entre reservas de clientes y bloqueos operativos, y cero regresiones sobre la suite existente.

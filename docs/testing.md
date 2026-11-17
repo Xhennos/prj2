@@ -14,6 +14,7 @@ Este documento define la estrategia de aseguramiento de calidad (QA) para valida
 | **Reglas Críticas de Negocio** | `tests/business-rules.test.ts` | Horario operativo (`08:00Z-20:00Z`), duración (`30-480 min`), capacidad máxima, espacios inactivos |
 | **Anti-Doble Reserva (Obligatorio)** | `tests/no-double-booking.test.ts` | Matriz completa de solapamientos horarios sobre el mismo espacio |
 | **Criterios de Aceptación E2E** | `tests/acceptance-criteria.test.ts` | Escenarios Given/When/Then ejecutados a través del servidor HTTP REST real (`src/app.ts`) |
+| **Change Request CR-01 (Ciclo 3)** | `tests/change-request.test.ts` | Política de cancelación con antelación mínima de 2h (`RB-07`) y bloqueos por mantenimiento (`RB-08`) |
 
 ---
 
