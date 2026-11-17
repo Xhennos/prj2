@@ -27,6 +27,14 @@ Este documento traduce los outcomes definidos en `specs/outcomes.md` en requerim
 - El sistema debe permitir cancelar una reserva existente en estado `CONFIRMED` cambiando su estado a `CANCELLED` y registrando la marca temporal de cancelación.
 - Al cancelarse una reserva, el intervalo horario correspondiente debe quedar liberado inmediatamente para nuevas reservas de otros usuarios.
 
+### RF-06: Política de Cancelación con Antelación Mínima *(Agregado por CR-01 - Ciclo 3)*
+- El sistema debe validar la ventana de cancelación antes de anular una reserva: solo se permite cancelar si faltan al menos **120 minutos (2 horas)** respecto a la hora de inicio (`startTime`).
+- Si faltan menos de 2 horas, la cancelación debe rechazarse con `CANCELLATION_WINDOW_EXPIRED` manteniendo la reserva en estado `CONFIRMED`.
+
+### RF-07: Bloqueo Administrativo de Horarios por Mantenimiento *(Agregado por CR-01 - Ciclo 3)*
+- El sistema debe permitir a un administrador registrar ventanas de mantenimiento para un espacio (`spaceId`, `startTime`, `endTime`, `reason`) y consultarlas por espacio o fecha.
+- Ninguna nueva reserva puede solaparse con un bloque de mantenimiento registrado sobre el espacio solicitado.
+
 ---
 
 ## 2. Requerimientos No Funcionales (RNF)

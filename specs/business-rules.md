@@ -38,3 +38,20 @@ Las siguientes reglas gobiernan todas las operaciones del dominio en `CoworkHub`
 ### RB-06: Existencia y Disponibilidad Activa del Espacio
 - Solo se pueden crear reservas sobre un `spaceId` existente cuyo atributo `isActive` sea `true`.
 - **Error asociado:** `SPACE_NOT_FOUND` (HTTP `404`) si no existe, o `SPACE_INACTIVE` (HTTP `422`) si está deshabilitado.
+
+---
+
+## Reglas Añadidas por Change Request CR-01 (Ciclo 3)
+
+### RB-07: Antelación Mínima de Cancelación (2 Horas)
+- Una reserva `CONFIRMED` únicamente puede cancelarse cuando el tiempo restante hasta su inicio sea mayor o igual a **120 minutos (7,200,000 ms)**:
+  $$
+  \text{startTime} - \text{currentTime} \ge 120\text{ minutos}
+  $$
+- Si faltan menos de 120 minutos (incluyendo reservas ya iniciadas), la cancelación es rechazada sin modificar el estado de la reserva.
+- **Error asociado:** `CANCELLATION_WINDOW_EXPIRED` (HTTP `422`).
+
+### RB-08: Bloqueo Administrativo por Mantenimiento
+- Un administrador puede registrar ventanas de mantenimiento `[maintStart, maintEnd)` sobre un `spaceId` existente.
+- Si una nueva reserva solicita un intervalo `[newStart, newEnd)` que se solapa con un bloqueo de mantenimiento del mismo espacio ($\text{newStart} < \text{maintEnd} \land \text{newEnd} > \text{maintStart}$), la reserva debe ser rechazada.
+- **Error asociado:** `SPACE_UNDER_MAINTENANCE` (HTTP `409`).
