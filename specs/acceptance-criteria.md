@@ -35,6 +35,24 @@ Todos los criterios están definidos en formato **Given / When / Then** para ser
 
 ## AC-06: Cancelación de reserva y liberación del horario
 - **Dado** una reserva `CONFIRMED` de `14:00Z` a `16:00Z` en `"Sala Innovación"`,
-- **Cuando** el usuario cancela dicha reserva,
+- **Cuando** el usuario cancela dicha reserva con al menos 2 horas de antelación,
 - **Entonces** su estado pasa a `CANCELLED` (HTTP `200`),
 - **Y** otro usuario puede reservar inmediatamente `"Sala Innovación"` de `14:00Z` a `16:00Z` con éxito.
+
+---
+
+## Criterios Añadidos por Change Request CR-01 (Ciclo 3)
+
+## AC-07: Política de cancelación con antelación mínima de 2 horas
+- **Dado** una reserva `CONFIRMED` que inicia a las `14:00Z`,
+- **Cuando** el usuario intenta cancelarla a las `12:00Z` (exactamente 2 horas antes),
+- **Entonces** la cancelación es aceptada con HTTP `200` y estado `CANCELLED`;
+- **Pero cuando** el usuario intenta cancelarla a las `12:30Z` (90 minutos antes),
+- **Entonces** el sistema rechaza la cancelación con HTTP `422` y código `CANCELLATION_WINDOW_EXPIRED`, manteniendo el estado `CONFIRMED`.
+
+## AC-08: Bloqueo de reserva en ventana de mantenimiento administrativo
+- **Dado** un espacio activo `"Sala Innovación"` con un bloqueo de mantenimiento registrado de `13:00Z` a `15:00Z`,
+- **Cuando** un usuario intenta crear una reserva en `"Sala Innovación"` de `14:00Z` a `16:00Z`,
+- **Entonces** el sistema rechaza la reserva con HTTP `409` y código `SPACE_UNDER_MAINTENANCE`;
+- **Y cuando** el usuario solicita la misma sala de `15:00Z` a `16:30Z` (fuera del mantenimiento),
+- **Entonces** la reserva es aceptada con HTTP `201`.

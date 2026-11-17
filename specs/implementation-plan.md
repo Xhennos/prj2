@@ -28,3 +28,8 @@ Este documento coordina las entregas en **3 ciclos iterativos** con rotación es
 | **Product / Spec Lead** | Einar | Issue `change-request`, actualización trazable de `specs/` (`RB-07`, `RB-08`, `AC-07`, `AC-08`) |
 | **Architecture / Dev Lead** | Ahmed | Actualización de `specs/data-model.md`, `specs/api.md` e implementación del cambio en `src/` sin regresiones |
 | **QA / DevOps Lead** | Estiven | Nuevas pruebas en `tests/change-request.test.ts`, actualización de `docs/testing.md`, `docs/decisions.md`, `README.md` y bitácora completa `docs/ai-log.md` |
+
+### Trazabilidad del Change Request (CR-01)
+- **Origen:** Solicitud de negocio introducida a mitad del desarrollo en el Issue `#11` (`change-request`).
+- **Cambios en reglas de negocio:** Incorporación de `RB-07` (ventana de cancelación de 120 minutos) y `RB-08` (bloqueo de mantenimiento en espacios).
+- **Impacto técnico planificado:** Nueva tabla `maintenance_blocks` en SQLite, validación de mantenimiento en `createReservation`, validación de ventana en `cancelReservation`, y nuevos endpoints `POST /api/maintenance` y `GET /api/maintenance`.
