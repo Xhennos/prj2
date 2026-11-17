@@ -101,6 +101,25 @@ export function createApp(service: CoworkReservationService): Server {
         return;
       }
 
+      if (method === "GET" && pathname === "/api/maintenance") {
+        const spaceId = url.searchParams.get("spaceId") ?? undefined;
+        const maintenanceBlocks = service.listMaintenanceBlocks(spaceId);
+        sendJson(res, 200, { maintenanceBlocks });
+        return;
+      }
+
+      if (method === "POST" && pathname === "/api/maintenance") {
+        const body = (await readJsonBody(req)) as Record<string, unknown>;
+        const block = service.createMaintenanceBlock({
+          spaceId: body.spaceId as string,
+          startTime: body.startTime as string,
+          endTime: body.endTime as string,
+          reason: body.reason as string
+        });
+        sendJson(res, 201, block);
+        return;
+      }
+
       sendJson(res, 404, {
         error: {
           code: "NOT_FOUND",

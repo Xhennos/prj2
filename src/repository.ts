@@ -3,8 +3,10 @@ import type { DatabaseSync } from "./db.js";
 import {
   DomainError,
   type AvailabilitySlot,
+  type CreateMaintenanceBlockInput,
   type CreateReservationInput,
   type CreateSpaceInput,
+  type MaintenanceBlock,
   type Reservation,
   type ReservationFilter,
   type Space,
@@ -34,6 +36,15 @@ interface ReservationRow {
   cancelled_at: string | null;
 }
 
+interface MaintenanceBlockRow {
+  id: string;
+  space_id: string;
+  start_time: string;
+  end_time: string;
+  reason: string;
+  created_at: string;
+}
+
 function mapSpaceRow(row: SpaceRow): Space {
   return {
     id: row.id,
@@ -58,6 +69,17 @@ function mapReservationRow(row: ReservationRow): Reservation {
     status: row.status,
     createdAt: row.created_at,
     cancelledAt: row.cancelled_at
+  };
+}
+
+function mapMaintenanceRow(row: MaintenanceBlockRow): MaintenanceBlock {
+  return {
+    id: row.id,
+    spaceId: row.space_id,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    reason: row.reason,
+    createdAt: row.created_at
   };
 }
 
@@ -114,6 +136,27 @@ export class SQLiteRepository {
     this.db.exec("BEGIN IMMEDIATE;");
 
     try {
+      const maintenance = this.db
+        .prepare(
+          `SELECT id, start_time, end_time, reason
+           FROM maintenance_blocks
+           WHERE space_id = ?
+             AND start_time < ?
+             AND end_time > ?
+           LIMIT 1`
+        )
+        .get(input.spaceId, input.endTime, input.startTime) as
+        | { id: string; start_time: string; end_time: string; reason: string }
+        | undefined;
+
+      if (maintenance) {
+        throw new DomainError(
+          "SPACE_UNDER_MAINTENANCE",
+          `El espacio se encuentra bloqueado por mantenimiento (${maintenance.start_time} - ${maintenance.end_time}): ${maintenance.reason}.`,
+          409
+        );
+      }
+
       const overlapping = this.db
         .prepare(
           `SELECT id, start_time, end_time
@@ -262,5 +305,47 @@ export class SQLiteRepository {
       throw new DomainError("RESERVATION_NOT_FOUND", `Reserva ${id} no encontrada.`, 404);
     }
     return updated;
+  }
+
+  createMaintenanceBlock(input: CreateMaintenanceBlockInput, createdAt: string): MaintenanceBlock {
+    const id = randomUUID();
+    this.db
+      .prepare(
+        `INSERT INTO maintenance_blocks (id, space_id, start_time, end_time, reason, created_at)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      )
+      .run(id, input.spaceId, input.startTime, input.endTime, input.reason.trim(), createdAt);
+
+    return {
+      id,
+      spaceId: input.spaceId,
+      startTime: input.startTime,
+      endTime: input.endTime,
+      reason: input.reason.trim(),
+      createdAt
+    };
+  }
+
+  listMaintenanceBlocks(spaceId?: string): MaintenanceBlock[] {
+    if (spaceId) {
+      const rows = this.db
+        .prepare(
+          `SELECT id, space_id, start_time, end_time, reason, created_at
+           FROM maintenance_blocks
+           WHERE space_id = ?
+           ORDER BY start_time ASC`
+        )
+        .all(spaceId) as unknown as MaintenanceBlockRow[];
+      return rows.map(mapMaintenanceRow);
+    }
+
+    const rows = this.db
+      .prepare(
+        `SELECT id, space_id, start_time, end_time, reason, created_at
+         FROM maintenance_blocks
+         ORDER BY start_time ASC`
+      )
+      .all() as unknown as MaintenanceBlockRow[];
+    return rows.map(mapMaintenanceRow);
   }
 }

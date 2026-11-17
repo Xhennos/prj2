@@ -1,8 +1,10 @@
 import { SQLiteRepository } from "./repository.js";
 import {
   DomainError,
+  type CreateMaintenanceBlockInput,
   type CreateReservationInput,
   type CreateSpaceInput,
+  type MaintenanceBlock,
   type Reservation,
   type ReservationFilter,
   type Space,
@@ -23,6 +25,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const MIN_DURATION_MINUTES = 30;
 const MAX_DURATION_MINUTES = 480;
+const MIN_CANCELLATION_LEAD_MS = 120 * 60_000;
 
 function parseIsoTimestamp(value: string, fieldName: string): Date {
   if (typeof value !== "string" || !ISO_WITH_TZ_REGEX.test(value)) {
@@ -221,6 +224,62 @@ export class CoworkReservationService {
       throw new DomainError("RESERVATION_ALREADY_CANCELLED", "La reserva ya se encuentra cancelada.", 422);
     }
 
-    return this.repo.cancelReservation(existing.id, this.nowProvider().toISOString());
+    const now = this.nowProvider();
+    // RB-07 (CR-01): Antelación mínima de 2 horas (120 minutos) para cancelar
+    const msUntilStart = Date.parse(existing.startTime) - now.getTime();
+    if (msUntilStart < MIN_CANCELLATION_LEAD_MS) {
+      throw new DomainError(
+        "CANCELLATION_WINDOW_EXPIRED",
+        "Solo se puede cancelar una reserva con al menos 2 horas (120 minutos) de antelación.",
+        422
+      );
+    }
+
+    return this.repo.cancelReservation(existing.id, now.toISOString());
+  }
+
+  createMaintenanceBlock(input: CreateMaintenanceBlockInput): MaintenanceBlock {
+    if (!input || typeof input !== "object") {
+      throw new DomainError("VALIDATION_ERROR", "El cuerpo de la solicitud es inválido.", 400);
+    }
+    if (typeof input.spaceId !== "string" || input.spaceId.trim().length === 0) {
+      throw new DomainError("VALIDATION_ERROR", "El campo spaceId es obligatorio.", 400);
+    }
+    if (typeof input.reason !== "string" || input.reason.trim().length < 3) {
+      throw new DomainError(
+        "VALIDATION_ERROR",
+        "El motivo de mantenimiento (reason) debe tener al menos 3 caracteres.",
+        400
+      );
+    }
+
+    const startDate = parseIsoTimestamp(input.startTime, "startTime");
+    const endDate = parseIsoTimestamp(input.endTime, "endTime");
+    if (endDate.getTime() <= startDate.getTime()) {
+      throw new DomainError(
+        "VALIDATION_ERROR",
+        "La hora de finalización del mantenimiento debe ser posterior a la hora de inicio.",
+        400
+      );
+    }
+
+    const space = this.repo.findSpaceById(input.spaceId.trim());
+    if (!space) {
+      throw new DomainError("SPACE_NOT_FOUND", `Espacio '${input.spaceId}' no encontrado.`, 404);
+    }
+
+    return this.repo.createMaintenanceBlock(
+      {
+        spaceId: space.id,
+        startTime: startDate.toISOString(),
+        endTime: endDate.toISOString(),
+        reason: input.reason
+      },
+      this.nowProvider().toISOString()
+    );
+  }
+
+  listMaintenanceBlocks(spaceId?: string): MaintenanceBlock[] {
+    return this.repo.listMaintenanceBlocks(spaceId);
   }
 }

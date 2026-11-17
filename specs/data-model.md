@@ -5,6 +5,7 @@
 ```mermaid
 erDiagram
     SPACES ||--o{ RESERVATIONS : "recibe"
+    SPACES ||--o{ MAINTENANCE_BLOCKS : "bloquea"
 
     SPACES {
         TEXT id PK
@@ -27,6 +28,15 @@ erDiagram
         TEXT status
         TEXT created_at
         TEXT cancelled_at
+    }
+
+    MAINTENANCE_BLOCKS {
+        TEXT id PK
+        TEXT space_id FK
+        TEXT start_time
+        TEXT end_time
+        TEXT reason
+        TEXT created_at
     }
 ```
 
@@ -63,8 +73,21 @@ Almacena las reservas confirmadas y canceladas.
 | `created_at` | `TEXT` | `NOT NULL` | Timestamp ISO 8601 UTC de creación |
 | `cancelled_at` | `TEXT` | `NULL` | Timestamp ISO 8601 UTC de cancelación |
 
+### Tabla `maintenance_blocks` *(Agregada por CR-01 - Ciclo 3)*
+Almacena los bloqueos administrativos de mantenimiento sobre espacios.
+
+| Columna | Tipo SQLite | Restricciones | Descripción |
+| :--- | :--- | :--- | :--- |
+| `id` | `TEXT` | `PRIMARY KEY` | UUID v4 del bloqueo |
+| `space_id` | `TEXT` | `NOT NULL REFERENCES spaces(id) ON DELETE CASCADE` | Espacio bloqueado |
+| `start_time` | `TEXT` | `NOT NULL` | Inicio del mantenimiento ISO 8601 UTC |
+| `end_time` | `TEXT` | `NOT NULL` | Fin del mantenimiento ISO 8601 UTC |
+| `reason` | `TEXT` | `NOT NULL` | Motivo operativo del mantenimiento |
+| `created_at` | `TEXT` | `NOT NULL` | Timestamp ISO 8601 UTC de creación |
+
 ---
 
 ## 3. Índices de Optimización
 - `idx_reservations_overlap`: índice compuesto sobre `(space_id, status, start_time, end_time)` para acelerar la detección de solapamiento de horarios en `O(log N)` y garantizar respuestas bajo 50 ms (`RNF-02`).
+- `idx_maintenance_space_time`: índice compuesto sobre `(space_id, start_time, end_time)` para validar bloqueos de mantenimiento en tiempo logarítmico.
 - Al almacenarse las fechas normalizadas en formato ISO 8601 UTC con precisión de milisegundos (`toISOString()`), la comparación lexicográfica en SQLite coincide exactamente con el orden cronológico.
